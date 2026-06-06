@@ -21,5 +21,7 @@ export default function StatesSection({ state, update }: Props) {
   "error",
   "success"
 ]} onChange={(value) => update("previewState", value)} />
-<Slider label="Active index" value={state.activeIndex} min={0} max={12} step={1} onChange={(value) => update("activeIndex", value)} /></SectionCard>;
+<Slider label="Active index" value={state.activeIndex} min={0} max={12} step={1} onChange={(value) => update("activeIndex", value)} />
+<Slider label="Optional trailing steps" value={state.optionalSteps} min={0} max={6} step={1} onChange={(value) => update("optionalSteps", value)} />
+<Slider label="Error step (0 is none)" value={state.errorStep} min={0} max={14} step={1} onChange={(value) => update("errorStep", value)} /></SectionCard>;
 }

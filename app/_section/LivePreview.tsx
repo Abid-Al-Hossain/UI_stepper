@@ -4,21 +4,72 @@ import type { CSSProperties } from "react";
 import type { StepperState } from "../types";
 
 function shell(state: StepperState): CSSProperties {
-  return { width: state.width, minHeight: state.height, padding: state.padding, gap: state.gap, borderRadius: state.radius, border: `${state.borderWidth}px solid ${state.border}`, boxShadow: `0 ${Math.round(state.shadow / 3)}px ${state.shadow}px rgba(0,0,0,.28)`, background: state.background, color: state.foreground, fontFamily: state.fontFamily, opacity: state.disabled ? 0.55 : 1 };
+  return {
+    width: state.width,
+    minHeight: state.height,
+    padding: state.padding,
+    borderRadius: state.radius,
+    border: `${state.borderWidth}px solid ${state.border}`,
+    boxShadow: `0 ${Math.round(state.shadow / 3)}px ${state.shadow}px rgba(0,0,0,.28)`,
+    background: state.background,
+    color: state.foreground,
+    fontFamily: state.fontFamily,
+    opacity: state.disabled ? 0.55 : 1,
+  };
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
 }
 
 export default function LivePreview({ state }: { state: StepperState }) {
-  const model = state as Record<string, unknown>;
-  const numberValue = (key: string, fallback: number) => typeof model[key] === "number" ? model[key] : fallback;
-  const stringValue = (key: string, fallback: string) => typeof model[key] === "string" ? model[key] : fallback;
-  const boolValue = (key: string) => typeof model[key] === "boolean" ? model[key] : false;
-  const count = numberValue("itemCount", numberValue("rowCount", numberValue("slideCount", numberValue("imageCount", numberValue("filterCount", numberValue("controlCount", 5))))));
-  const items = Array.from({ length: count }, (_, index) => index + 1);
-  const badge = (text: string) => <span className="rounded-full border px-3 py-1 text-xs" style={{ borderColor: state.border, color: state.accent }}>{text}</span>;
-  const panel = shell(state);
-  if ("chartType" in model) return <section role="img" aria-label={state.ariaLabel} style={panel} className="grid content-center"><h3 style={{ fontSize: state.titleSize }}>{state.title}</h3><div className="flex items-end gap-3">{items.map((item) => <div key={item} className="w-10 rounded-t-xl" style={{ height: 36 + item * 18, background: state.accent }} />)}</div></section>;
-  if ("src" in model && ("showTimeline" in model || "showCaptions" in model)) return <section role={state.role} aria-label={state.ariaLabel} style={panel} className="grid content-center"><h3>{state.title}</h3>{"showTimeline" in model ? <audio controls muted={boolValue("muted")} loop={boolValue("loop")} preload={stringValue("preload", "metadata")} className="w-full" /> : <video controls muted={boolValue("muted")} loop={boolValue("loop")} preload={stringValue("preload", "metadata")} poster={stringValue("poster", "")} className="w-full rounded-xl bg-black/40" />}</section>;
-  if (state.role === "dialog") return <div className="grid place-items-center"><section role="dialog" aria-label={state.ariaLabel} style={panel} className="grid"><h3 style={{ fontSize: state.titleSize }}>{state.title}</h3><p style={{ color: stringValue("muted", "#94a3b8") }}>{state.description}</p><div className="flex gap-2"><button type="button" className="rounded-xl px-4 py-2" style={{ background: state.accent, color: "#020617" }}>Action</button><button type="button" className="rounded-xl border px-4 py-2" style={{ borderColor: state.border }}>Cancel</button></div></section></div>;
-  if (state.role === "table") return <table role="table" aria-label={state.ariaLabel} style={panel}><caption>{stringValue("caption", state.title)}</caption><tbody>{items.map((item) => <tr key={item}><th className="p-2 text-left">Row {item}</th><td className="p-2">{state.label}</td></tr>)}</tbody></table>;
-  return <section id={state.id} role={state.role} aria-label={state.ariaLabel} tabIndex={state.tabIndex} style={panel} className="grid content-center"><h3 style={{ fontSize: state.titleSize, fontWeight: state.fontWeight }}>{state.title}</h3><p style={{ color: stringValue("muted", "#94a3b8"), fontSize: state.bodySize }}>{state.description}</p><div className="flex flex-wrap gap-2">{items.map((item) => badge(`${state.label} ${item}`))}</div><p className="text-xs" style={{ color: stringValue("muted", "#94a3b8") }}>{state.helper} · {stringValue("previewState", "default")}</p></section>;
+  const count = clamp(state.itemCount, 1, 14);
+  const activeIndex = clamp(state.activeIndex, 0, count - 1);
+  const errorIndex = state.errorStep > 0 ? clamp(state.errorStep - 1, 0, count - 1) : -1;
+  const optionalIndex = state.optionalSteps > 0 ? clamp(count - state.optionalSteps, 0, count - 1) : -1;
+  const isVertical = state.orientation === "vertical";
+  const steps = Array.from({ length: count }, (_, index) => index);
+  const list = (
+    <ol className={isVertical ? "grid gap-4" : "grid gap-4"} style={{ gridTemplateColumns: isVertical ? undefined : `repeat(${count}, minmax(0, 1fr))` }}>
+      {steps.map((step, index) => {
+        const isActive = index === activeIndex;
+        const isComplete = index < activeIndex;
+        const isError = index === errorIndex || (state.previewState === "error" && isActive);
+        const isDisabled = state.disabled || index > activeIndex + 1;
+        const markerBg = isError ? "#ef4444" : isActive ? state.accent : isComplete ? "#22c55e" : "transparent";
+        const markerColor = isActive || isComplete || isError ? "#020617" : state.foreground;
+        return (
+          <li key={step} className={isVertical ? "grid grid-cols-[auto_1fr] gap-3" : "grid gap-3"}>
+            <div className={isVertical ? "grid justify-items-center gap-2" : "flex items-center gap-2"}>
+              <span className="grid size-9 place-items-center rounded-full border text-sm font-black" style={{ borderColor: isActive ? state.accent : state.border, background: markerBg, color: markerColor }}>
+                {isComplete ? "OK" : index + 1}
+              </span>
+              {index < count - 1 && (
+                <span aria-hidden="true" className={isVertical ? "h-10 w-px" : "h-px flex-1"} style={{ background: isComplete ? state.accent : state.border, borderTop: state.connectorStyle === "dashed" ? `1px dashed ${state.border}` : undefined }} />
+              )}
+            </div>
+            <div aria-current={isActive ? "step" : undefined} aria-disabled={isDisabled || undefined} className="rounded-2xl border p-3" style={{ borderColor: isError ? "#ef4444" : isActive ? state.accent : state.border, color: isDisabled ? state.muted : state.foreground }}>
+              <p className="text-sm font-bold">{state.label} {index + 1}</p>
+              <p className="text-xs" style={{ color: state.muted }}>
+                {isError ? "Error" : isComplete ? "Complete" : isActive ? "Current step" : isDisabled ? "Disabled" : "Upcoming"}
+                {index === optionalIndex ? " / Optional" : ""}
+              </p>
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
+
+  return state.role === "navigation" ? (
+    <nav id={state.id} aria-label={state.ariaLabel} style={shell(state)} className="grid content-center gap-4">
+      {list}
+      <p className="text-xs" style={{ color: state.muted }}>Process navigation with aria-current step, connectors, complete, error, disabled, and optional states.</p>
+    </nav>
+  ) : (
+    <section id={state.id} aria-label={state.ariaLabel} style={shell(state)} className="grid content-center gap-4">
+      {list}
+      <p className="text-xs" style={{ color: state.muted }}>Ordered process list with aria-current step, connectors, complete, error, disabled, and optional states.</p>
+    </section>
+  );
 }
