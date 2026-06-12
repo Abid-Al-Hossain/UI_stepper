@@ -41,11 +41,11 @@ export default function LivePreview({ state }: { state: StepperState }) {
         return (
           <li key={step} className={isVertical ? "grid grid-cols-[auto_1fr] gap-3" : "grid gap-3"}>
             <div className={isVertical ? "grid justify-items-center gap-2" : "flex items-center gap-2"}>
-              <span className="grid size-9 place-items-center rounded-full border text-sm font-black" style={{ borderColor: isActive ? state.accent : state.border, background: markerBg, color: markerColor }}>
+              <span className="grid size-9 place-items-center rounded-full border text-sm font-black" style={{ borderColor: isActive ? state.accent : state.border, background: markerBg, color: markerColor, transition: state.motion ? "background 0.2s ease, transform 0.2s ease, border-color 0.2s ease" : "none", transform: state.motion && isActive ? "scale(1.1)" : "scale(1)" }}>
                 {isComplete ? "OK" : index + 1}
               </span>
               {index < count - 1 && (
-                <span aria-hidden="true" className={isVertical ? "h-10 w-px" : "h-px flex-1"} style={{ background: isComplete ? state.accent : state.border, borderTop: state.connectorStyle === "dashed" ? `1px dashed ${state.border}` : undefined }} />
+                <span aria-hidden="true" className={isVertical ? "h-10 w-px" : "h-px flex-1"} style={{ background: isComplete ? state.accent : state.border, borderTop: state.connectorStyle === "dashed" ? `1px dashed ${state.border}` : undefined, transition: state.motion ? "background 0.2s ease" : "none" }} />
               )}
             </div>
             <div aria-current={isActive ? "step" : undefined} aria-disabled={isDisabled || undefined} className="rounded-2xl border p-3" style={{ borderColor: isError ? "#ef4444" : isActive ? state.accent : state.border, color: isDisabled ? state.muted : state.foreground }}>
