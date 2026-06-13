@@ -34,11 +34,11 @@ export default function StepperComponent() {
         return (
           <li key={step} style={{ display: "grid", gridTemplateColumns: isVertical ? "auto 1fr" : undefined, gap: 12 }}>
             <div style={{ display: isVertical ? "grid" : "flex", justifyItems: "center", alignItems: "center", gap: 8 }}>
-              <span style={{ display: "grid", placeItems: "center", width: 36, height: 36, borderRadius: 999, border: "1px solid " + (isActive ? state.accent : state.border), background: markerBg, color: markerColor, fontWeight: 900, transition: ${state.motion ? '"background 0.2s ease, transform 0.2s ease, border-color 0.2s ease"' : '"none"'}, transform: isActive && ${state.motion} ? "scale(1.1)" : "scale(1)" }}>
+              <span style={{ display: "grid", placeItems: "center", width: 36, height: 36, borderRadius: 999, border: "1px solid " + (isActive ? state.accent : state.border), background: markerBg, color: markerColor, fontWeight: 900, transition: ${state.transitionDuration > 0 ? '"background 0.2s ease, transform 0.2s ease, border-color 0.2s ease"' : '"none"'}, transform: isActive && ${state.transitionDuration > 0} ? "scale(1.1)" : "scale(1)" }}>
                 {isComplete ? "OK" : index + 1}
               </span>
               {index < count - 1 && (
-                <span aria-hidden="true" style={{ display: "block", width: isVertical ? 1 : "100%", height: isVertical ? 40 : 1, flex: 1, background: isComplete ? state.accent : state.border, borderTop: !isVertical && state.connectorStyle === "dashed" ? "1px dashed " + state.border : undefined, transition: ${state.motion ? '"background 0.2s ease"' : '"none"'} }} />
+                <span aria-hidden="true" style={{ display: "block", width: isVertical ? 1 : "100%", height: isVertical ? 40 : 1, flex: 1, background: isComplete ? state.accent : state.border, borderTop: !isVertical && state.connectorStyle === "dashed" ? "1px dashed " + state.border : undefined, transition: ${state.transitionDuration > 0 ? '"background 0.2s ease"' : '"none"'} }} />
               )}
             </div>
             <div aria-current={isActive ? "step" : undefined} aria-disabled={isDisabled || undefined} style={{ padding: 12, border: "1px solid " + (isError ? "#ef4444" : isActive ? state.accent : state.border), borderRadius: 16, color: isDisabled ? state.muted : state.foreground }}>
