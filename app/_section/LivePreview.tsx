@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import type { StepperState } from "../types";
 import { SYSTEM_FONTS } from "@/components/shared/typography/fontConstants";
 
@@ -28,9 +28,9 @@ function shell(state: StepperState): CSSProperties {
     minHeight: state.height,
     padding: state.padding,
     borderRadius: buildRadius(state),
-    border: `${state.borderWidth}px ${state.borderStyle} ${state.border}`,
+    border: `${state.borderWidth}px ${state.borderStyle} ${state.disabled && state.disabledUseCustomColors ? state.disabledBorder : state.border}`,
     boxShadow: buildShadow(state),
-    background: state.background,
+    background: state.disabled && state.disabledUseCustomColors ? state.disabledBg : state.background,
     color: state.foreground,
     fontFamily: resolveFont(state),
     fontStyle: state.fontStyle,
@@ -38,7 +38,8 @@ function shell(state: StepperState): CSSProperties {
     textDecoration: state.textDecoration,
     letterSpacing: `${state.letterSpacing}${state.letterSpacingUnit}`,
     lineHeight: state.lineHeight,
-    opacity: state.disabled ? 0.55 : 1,
+    opacity: state.disabled ? state.disabledOpacity : 1,
+    cursor: state.disabled ? state.disabledCursor : undefined,
   };
 }
 
@@ -53,30 +54,42 @@ export default function LivePreview({ state }: { state: StepperState }) {
   const optionalIndex = state.optionalSteps > 0 ? clamp(count - state.optionalSteps, 0, count - 1) : -1;
   const isVertical = state.orientation === "vertical";
   const steps = Array.from({ length: count }, (_, index) => index);
+  const [hoverIndex, setHoverIndex] = useState(-1);
   const list = (
-    <ol className={isVertical ? "grid gap-4" : "grid gap-4"} style={{ gridTemplateColumns: isVertical ? undefined : `repeat(${count}, minmax(0, 1fr))` }}>
+    <ol className="grid" style={{ gap: state.stepGap, maxWidth: state.stepperMaxWidth, gridTemplateColumns: isVertical ? undefined : `repeat(${count}, minmax(0, 1fr))` }}>
       {steps.map((step, index) => {
         const isActive = index === activeIndex;
         const isComplete = index < activeIndex;
         const isError = index === errorIndex || (state.previewState === "error" && isActive);
         const isDisabled = state.disabled || index > activeIndex + 1;
-        const markerBg = isError ? "#ef4444" : isActive ? state.accent : isComplete ? "#22c55e" : "transparent";
-        const markerColor = isActive || isComplete || isError ? "#020617" : state.foreground;
+        const isHover = state.clickable && hoverIndex === index && !isDisabled && !isActive;
+        const markerBg = isError ? state.errorBg : isActive ? state.activeBg : isComplete ? state.completedBg : state.pendingBg;
+        const markerColor = isError ? state.errorIconColor : isActive ? state.activeText : isComplete ? state.completedIconColor : state.pendingText;
+        const markerBorder = isError ? state.errorBg : isActive ? state.accent : isComplete ? state.completedBg : state.pendingBorder;
+        const cardBg = isHover ? state.hoverBg : "transparent";
+        const cardColor = isDisabled ? state.muted : isHover ? state.hoverText : state.stepTitleColor;
         return (
           <li key={step} className={isVertical ? "grid grid-cols-[auto_1fr] gap-3" : "grid gap-3"}>
-            <div className={isVertical ? "grid justify-items-center gap-2" : "flex items-center gap-2"}>
-              <span className="grid size-9 place-items-center rounded-full border text-sm font-black" style={{ borderColor: isActive ? state.accent : state.border, background: markerBg, color: markerColor, transition: state.transitionDuration > 0 ? "background 0.2s ease, transform 0.2s ease, border-color 0.2s ease" : "none", transform: state.transitionDuration > 0 && isActive ? "scale(1.1)" : "scale(1)" }}>
-                {isComplete ? "OK" : index + 1}
+            <div className={isVertical ? "grid justify-items-center" : "flex items-center"} style={{ gap: state.connectorGap }}>
+              <span className="grid place-items-center rounded-full font-black" style={{ width: state.markerSize, height: state.markerSize, fontSize: Math.round(state.markerSize * 0.36), border: `${state.markerBorderWidth}px solid ${markerBorder}`, background: markerBg, color: markerColor, transition: state.transitionDuration > 0 ? "background 0.2s ease, transform 0.2s ease, border-color 0.2s ease" : "none", transform: state.transitionDuration > 0 && isActive ? "scale(1.1)" : "scale(1)" }}>
+                {isComplete && !state.numberedMarkers ? "OK" : index + 1}
               </span>
               {index < count - 1 && (
-                <span aria-hidden="true" className={isVertical ? "h-10 w-px" : "h-px flex-1"} style={{ background: isComplete ? state.accent : state.border, borderTop: state.connectorStyle === "dashed" ? `1px dashed ${state.border}` : undefined, transition: state.transitionDuration > 0 ? "background 0.2s ease" : "none" }} />
+                <span aria-hidden="true" className={isVertical ? "w-px flex-1" : "flex-1"} style={{ height: isVertical ? undefined : state.connectorWidth, width: isVertical ? state.connectorWidth : undefined, minHeight: isVertical ? 24 : undefined, background: state.connectorStyle === "dashed" ? undefined : isComplete ? state.connectorCompletedColor : state.connectorColor, borderTop: !isVertical && state.connectorStyle === "dashed" ? `${state.connectorWidth}px dashed ${isComplete ? state.connectorCompletedColor : state.connectorColor}` : undefined, borderLeft: isVertical && state.connectorStyle === "dashed" ? `${state.connectorWidth}px dashed ${isComplete ? state.connectorCompletedColor : state.connectorColor}` : undefined, transition: state.transitionDuration > 0 ? "background 0.2s ease" : "none" }} />
               )}
             </div>
-            <div aria-current={isActive ? "step" : undefined} aria-disabled={isDisabled || undefined} className="rounded-2xl border p-3" style={{ borderColor: isError ? "#ef4444" : isActive ? state.accent : state.border, color: isDisabled ? state.muted : state.foreground }}>
+            <div
+              aria-current={isActive ? "step" : undefined}
+              aria-disabled={isDisabled || undefined}
+              onMouseEnter={() => setHoverIndex(index)}
+              onMouseLeave={() => setHoverIndex(-1)}
+              className="rounded-2xl border p-3"
+              style={{ borderColor: isError ? state.errorBg : isActive ? state.activeBg : state.border, background: cardBg, color: cardColor, cursor: state.clickable && !isDisabled ? "pointer" : undefined }}
+            >
               <p className="text-sm font-bold">{state.label} {index + 1}</p>
-              <p className="text-xs" style={{ color: state.muted }}>
+              <p className="text-xs" style={{ color: state.stepDescriptionColor }}>
                 {isError ? "Error" : isComplete ? "Complete" : isActive ? "Current step" : isDisabled ? "Disabled" : "Upcoming"}
-                {index === optionalIndex ? " / Optional" : ""}
+                {index === optionalIndex ? <span style={{ color: state.optionalLabelColor }}> / {state.optionalLabelText}</span> : ""}
               </p>
             </div>
           </li>

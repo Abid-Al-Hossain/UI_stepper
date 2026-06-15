@@ -10,6 +10,9 @@ export function buildReactCode(state: StepperState) {
   return `import * as React from "react";
 
 const state = ${JSON.stringify(state, null, 2)};
+function resolveFont(s) { return s.fontBucket === "google" ? '"' + s.googleFontFamily + '", sans-serif' : "inherit"; }
+function buildShadow(s) { if (!s.shadowEnabled) return "none"; var hex = Math.round(s.shadowOpacity * 255).toString(16).padStart(2, "0"); return s.shadowX + "px " + s.shadowY + "px " + s.shadowBlur + "px " + s.shadowSpread + "px " + s.shadowColor + hex; }
+
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -22,29 +25,32 @@ export default function StepperComponent() {
   const optionalIndex = state.optionalSteps > 0 ? clamp(count - state.optionalSteps, 0, count - 1) : -1;
   const isVertical = state.orientation === "vertical";
   const steps = Array.from({ length: count }, (_, index) => index);
+  const [hoverIndex, setHoverIndex] = React.useState(-1);
   const list = (
-    <ol style={{ display: "grid", gap: 16, gridTemplateColumns: isVertical ? undefined : "repeat(" + count + ", minmax(0, 1fr))", margin: 0, padding: 0, listStyle: "none" }}>
+    <ol style={{ display: "grid", gap: state.stepGap, maxWidth: state.stepperMaxWidth, gridTemplateColumns: isVertical ? undefined : "repeat(" + count + ", minmax(0, 1fr))", margin: 0, padding: 0, listStyle: "none" }}>
       {steps.map((step, index) => {
         const isActive = index === activeIndex;
         const isComplete = index < activeIndex;
         const isError = index === errorIndex || (state.previewState === "error" && isActive);
         const isDisabled = state.disabled || index > activeIndex + 1;
-        const markerBg = isError ? "#ef4444" : isActive ? state.accent : isComplete ? "#22c55e" : "transparent";
-        const markerColor = isActive || isComplete || isError ? "#020617" : state.foreground;
+        const isHover = state.clickable && hoverIndex === index && !isDisabled && !isActive;
+        const markerBg = isError ? state.errorBg : isActive ? state.activeBg : isComplete ? state.completedBg : state.pendingBg;
+        const markerColor = isError ? state.errorIconColor : isActive ? state.activeText : isComplete ? state.completedIconColor : state.pendingText;
+        const markerBorder = isError ? state.errorBg : isActive ? state.accent : isComplete ? state.completedBg : state.pendingBorder;
         return (
           <li key={step} style={{ display: "grid", gridTemplateColumns: isVertical ? "auto 1fr" : undefined, gap: 12 }}>
-            <div style={{ display: isVertical ? "grid" : "flex", justifyItems: "center", alignItems: "center", gap: 8 }}>
-              <span style={{ display: "grid", placeItems: "center", width: 36, height: 36, borderRadius: 999, border: "1px solid " + (isActive ? state.accent : state.border), background: markerBg, color: markerColor, fontWeight: 900, transition: ${state.transitionDuration > 0 ? '"background 0.2s ease, transform 0.2s ease, border-color 0.2s ease"' : '"none"'}, transform: isActive && ${state.transitionDuration > 0} ? "scale(1.1)" : "scale(1)" }}>
-                {isComplete ? "OK" : index + 1}
+            <div style={{ display: isVertical ? "grid" : "flex", justifyItems: "center", alignItems: "center", gap: state.connectorGap }}>
+              <span style={{ display: "grid", placeItems: "center", width: state.markerSize, height: state.markerSize, fontSize: Math.round(state.markerSize * 0.36), borderRadius: 999, border: state.markerBorderWidth + "px solid " + markerBorder, background: markerBg, color: markerColor, fontWeight: 900, transition: ${state.transitionDuration > 0 ? '"background 0.2s ease, transform 0.2s ease, border-color 0.2s ease"' : '"none"'}, transform: isActive && ${state.transitionDuration > 0} ? "scale(1.1)" : "scale(1)" }}>
+                {isComplete && !state.numberedMarkers ? "OK" : index + 1}
               </span>
               {index < count - 1 && (
-                <span aria-hidden="true" style={{ display: "block", width: isVertical ? 1 : "100%", height: isVertical ? 40 : 1, flex: 1, background: isComplete ? state.accent : state.border, borderTop: !isVertical && state.connectorStyle === "dashed" ? "1px dashed " + state.border : undefined, transition: ${state.transitionDuration > 0 ? '"background 0.2s ease"' : '"none"'} }} />
+                <span aria-hidden="true" style={{ display: "block", width: isVertical ? state.connectorWidth : "100%", height: isVertical ? 40 : state.connectorWidth, flex: 1, background: state.connectorStyle === "dashed" ? undefined : (isComplete ? state.connectorCompletedColor : state.connectorColor), borderTop: !isVertical && state.connectorStyle === "dashed" ? state.connectorWidth + "px dashed " + (isComplete ? state.connectorCompletedColor : state.connectorColor) : undefined, borderLeft: isVertical && state.connectorStyle === "dashed" ? state.connectorWidth + "px dashed " + (isComplete ? state.connectorCompletedColor : state.connectorColor) : undefined, transition: ${state.transitionDuration > 0 ? '"background 0.2s ease"' : '"none"'} }} />
               )}
             </div>
-            <div aria-current={isActive ? "step" : undefined} aria-disabled={isDisabled || undefined} style={{ padding: 12, border: "1px solid " + (isError ? "#ef4444" : isActive ? state.accent : state.border), borderRadius: 16, color: isDisabled ? state.muted : state.foreground }}>
+            <div aria-current={isActive ? "step" : undefined} aria-disabled={isDisabled || undefined} onMouseEnter={() => setHoverIndex(index)} onMouseLeave={() => setHoverIndex(-1)} style={{ padding: 12, border: "1px solid " + (isError ? state.errorBg : isActive ? state.activeBg : state.border), borderRadius: 16, background: isHover ? state.hoverBg : "transparent", color: isDisabled ? state.muted : isHover ? state.hoverText : state.stepTitleColor, cursor: state.clickable && !isDisabled ? "pointer" : undefined }}>
               <p style={{ margin: 0, fontWeight: 800 }}>{state.label} {index + 1}</p>
-              <p style={{ margin: "4px 0 0", color: state.muted, fontSize: 12 }}>
-                {isError ? "Error" : isComplete ? "Complete" : isActive ? "Current step" : isDisabled ? "Disabled" : "Upcoming"}{index === optionalIndex ? " / Optional" : ""}
+              <p style={{ margin: "4px 0 0", color: state.stepDescriptionColor, fontSize: 12 }}>
+                {isError ? "Error" : isComplete ? "Complete" : isActive ? "Current step" : isDisabled ? "Disabled" : "Upcoming"}{index === optionalIndex ? <span style={{ color: state.optionalLabelColor }}> / {state.optionalLabelText}</span> : ""}
               </p>
             </div>
           </li>
@@ -58,12 +64,13 @@ export default function StepperComponent() {
     minHeight: state.height,
     padding: state.padding,
     borderRadius: state.radius,
-    border: state.borderWidth + "px solid " + state.border,
-    boxShadow: "0 " + Math.round(state.shadow / 3) + "px " + state.shadow + "px rgba(0,0,0,.28)",
+    border: state.borderWidth + "px " + state.borderStyle + " " + (state.disabled && state.disabledUseCustomColors ? state.disabledBorder : state.border),
+    boxShadow: buildShadow(state),
     background: state.background,
     color: state.foreground,
-    fontFamily: state.fontFamily,
-    opacity: state.disabled ? 0.55 : 1,
+    fontFamily: resolveFont(state),
+    opacity: state.disabled ? (state.disabledOpacity ?? 0.5) : 1,
+cursor: state.disabled ? state.disabledCursor : undefined,
   };
 
   return state.role === "navigation" ? (

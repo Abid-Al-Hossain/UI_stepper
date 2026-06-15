@@ -1,4 +1,4 @@
-export type SectionId = "presets" | "basics" | "metadata" | "content" | "items" | "behavior" | "layout" | "placement" | "sizing" | "colors" | "border" | "radius" | "shadow" | "typography" | "transitions" | "focus-ring" | "states" | "accessibility";
+export type SectionId = "presets" | "basics" | "metadata" | "content" | "items" | "behavior" | "layout" | "placement" | "sizing" | "colors" | "border" | "radius" | "shadow" | "typography" | "transitions" | "focus-ring" | "states" | "disabled" | "accessibility";
 
 export type StepperState = {
   title: string;
@@ -54,11 +54,24 @@ export type StepperState = {
   muted: string;
   accent: string;
   border: string;
+  activeBg: string;
+  activeText: string;
+  completedBg: string;
+  completedText: string;
+  errorBg: string;
+  errorText: string;
+  connectorActiveColor: string;
   titleSize: number;
   bodySize: number;
   fontWeight: number;
   previewState: "default" | "hover" | "focus" | "active" | "open" | "closed" | "selected" | "loading" | "empty" | "error" | "success";
   disabled: boolean;
+  disabledOpacity: number;
+  disabledCursor: "not-allowed" | "default" | "pointer";
+  disabledUseCustomColors: boolean;
+  disabledBg: string;
+  disabledText: string;
+  disabledBorder: string;
   role: "list" | "navigation";
   itemCount: number;
   activeIndex: number;
@@ -67,6 +80,34 @@ export type StepperState = {
   clickable: boolean;
   optionalSteps: number;
   errorStep: number;
+  // Pending step marker
+  pendingBg: string;
+  pendingText: string;
+  pendingBorder: string;
+  // Marker geometry
+  markerSize: number;
+  markerBorderWidth: number;
+  // Connector
+  connectorColor: string;
+  connectorWidth: number;
+  connectorCompletedColor: string;
+  connectorGap: number;
+  // Step text
+  stepTitleColor: string;
+  stepDescriptionColor: string;
+  // Optional label
+  optionalLabelColor: string;
+  optionalLabelText: string;
+  // Icon colors
+  errorIconColor: string;
+  completedIconColor: string;
+  // Layout
+  stepGap: number;
+  stepperMaxWidth: number;
+  numberedMarkers: boolean;
+  // Hover (clickable)
+  hoverBg: string;
+  hoverText: string;
 };
 
 export type StudioPreset = { id: string; family: string; archetype: string; variant: string; size: string; tags: string[]; state: Partial<StepperState> & Record<string, unknown> };
@@ -139,6 +180,10 @@ export const SECTIONS: Array<{ id: SectionId; label: string }> = [
   {
     "id": "states",
     "label": "State Preview"
+  },
+  {
+    "id": "disabled",
+    "label": "Disabled"
   },
   {
     "id": "accessibility",
