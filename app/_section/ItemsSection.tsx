@@ -15,6 +15,7 @@ export default function ItemsSection({ state, update }: Props) {
         <Slider label="Item count" value={state.itemCount} min={1} max={14} step={1} onChange={(value) => update("itemCount", value)} />
       </SectionCard>
       <SectionCard title="Marker & connector geometry" subtitle="Marker and connector sizing.">
+      <div className="space-y-4">
         <Slider label="Marker size" value={state.markerSize} min={24} max={56} step={1} onChange={(value) => update("markerSize", value)} />
         <Slider label="Marker border width" value={state.markerBorderWidth} min={0} max={6} step={1} onChange={(value) => update("markerBorderWidth", value)} />
         <Slider label="Connector width" value={state.connectorWidth} min={1} max={8} step={1} onChange={(value) => update("connectorWidth", value)} />
@@ -23,7 +24,8 @@ export default function ItemsSection({ state, update }: Props) {
         <Slider label="Max width" value={state.stepperMaxWidth} min={320} max={1000} step={10} onChange={(value) => update("stepperMaxWidth", value)} />
         <Switch label="Numbered markers" checked={state.numberedMarkers} onChange={(value) => update("numberedMarkers", value)} />
         <Input label="Optional label text" value={state.optionalLabelText} onChange={(value: string) => update("optionalLabelText", value)} placeholder="Optional" />
-      </SectionCard>
+      </div>
+    </SectionCard>
     </div>
   );
 }
