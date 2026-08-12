@@ -1,4 +1,4 @@
-export type SectionId = "presets" | "basics" | "metadata" | "content" | "items" | "behavior" | "layout" | "placement" | "sizing" | "colors" | "border" | "radius" | "shadow" | "typography" | "transitions" | "focus-ring" | "states" | "disabled" | "accessibility";
+export type SectionId = "presets" | "basics" | "metadata" | "items" | "behavior" | "layout" | "sizing" | "colors" | "border" | "radius" | "shadow" | "typography" | "transitions" | "focus-ring" | "states" | "disabled" | "accessibility";
 
 export type StepperState = {
   title: string;
@@ -126,10 +126,6 @@ export const SECTIONS: Array<{ id: SectionId; label: string }> = [
     "label": "Metadata"
   },
   {
-    "id": "content",
-    "label": "Content"
-  },
-  {
     "id": "items",
     "label": "Items"
   },
@@ -140,10 +136,6 @@ export const SECTIONS: Array<{ id: SectionId; label: string }> = [
   {
     "id": "layout",
     "label": "Layout"
-  },
-  {
-    "id": "placement",
-    "label": "Placement"
   },
   {
     "id": "sizing",
